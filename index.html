@@ -1,0 +1,454 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+    <link rel="stylesheet" href="app.css">
+    <link rel="stylesheet" href="node_modules/materialize-css/dist/css/materialize.min.css">
+    <script src="node_modules/axios/dist/axios.js"></script>
+</head>
+<body>
+<div id="preloader__booking--table--wrapper" class="center">
+    <svg version="1.1" id="L3" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px"
+         y="0px"
+         viewBox="0 0 100 100" enable-background="new 0 0 0 0" xml:space="preserve">
+			<circle fill="none" stroke="#00b0ff" stroke-width="4" cx="50" cy="50" r="44" style="opacity:0.5;"/>
+        <circle fill="#80d8ff" stroke="#fff" stroke-width="3" cx="8" cy="54" r="6" opacity="0.8">
+				<animateTransform
+                        attributeName="transform"
+                        dur="2s"
+                        type="rotate"
+                        from="0 50 48"
+                        to="360 50 52"
+                        repeatCount="indefinite"/>
+			</circle>
+		</svg>
+    <h4 class="preloader__booking--text">Palun oodake. Laen broneeringuid.</h4>
+</div>
+
+<div id="table__wrapper--div" class="container col s4 m7 l4 mt-5 hidden">
+    <div class="row">
+        <div class="orange accent-4 white-text p-5">
+            <h3 class="center mb-3">Broneeringu info</h3>
+            <p class="center">Rohelised väljad tähistavad vabu päevi. Oranzid väljad tähendavad, et vähemalt ühel
+                tehnikul on see aeg broneeritud. Palun
+                kontrollige hoolikalt enne broneerimist sisestatud info üle. Aitäh!
+            </p>
+        </div>
+    </div>
+    <div class="card">
+        <h3 class="card-header" id="monthAndYear"></h3>
+        <table class="striped centered" id="calendar">
+            <thead>
+            <tr>
+                <th>E</th>
+                <th>T</th>
+                <th>K</th>
+                <th>N</th>
+                <th>R</th>
+                <th>L</th>
+                <th>P</th>
+            </tr>
+            </thead>
+            <tbody id="calendar-body">
+            </tbody>
+        </table>
+        <div class="form-inline">
+            <div class="row">
+                <div class="col s6">
+                    <button class="btn btn-block btn-flat" id="previous" onclick="previous()">Eelmine</button>
+                </div>
+                <div class="col s6">
+                    <button class="btn btn-block btn-flat" id="next" onclick="next()">Järgmine</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="appointmentCreatorWrapper" class="row"></div>
+<div id="timeSlotCreatorWrapper" class="row"></div>
+
+<div class="preloader__for--main--data">
+    <svg version="1.1" id="L7" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px"
+         y="0px"
+         viewBox="0 0 100 100" enable-background="new 0 0 100 100" xml:space="preserve">
+ 			<path fill="#fff"
+                  d="M31.6,3.5C5.9,13.6-6.6,42.7,3.5,68.4c10.1,25.7,39.2,38.3,64.9,28.1l-3.1-7.9c-21.3,8.4-45.4-2-53.8-23.3c-8.4-21.3,2-45.4,23.3-53.8L31.6,3.5z">
+				<animateTransform
+                        attributeName="transform"
+                        attributeType="XML"
+                        type="rotate"
+                        dur="2s"
+                        from="0 50 50"
+                        to="360 50 50"
+                        repeatCount="indefinite"/>
+			</path>
+        <path fill="#fff"
+              d="M42.3,39.6c5.7-4.3,13.9-3.1,18.1,2.7c4.3,5.7,3.1,13.9-2.7,18.1l4.1,5.5c8.8-6.5,10.6-19,4.1-27.7c-6.5-8.8-19-10.6-27.7-4.1L42.3,39.6z">
+				<animateTransform
+                        attributeName="transform"
+                        attributeType="XML"
+                        type="rotate"
+                        dur="1s"
+                        from="0 50 50"
+                        to="-360 50 50"
+                        repeatCount="indefinite"/>
+			</path>
+        <path fill="#fff"
+              d="M82,35.7C74.1,18,53.4,10.1,35.7,18S10.1,46.6,18,64.3l7.6-3.4c-6-13.5,0-29.3,13.5-35.3s29.3,0,35.3,13.5L82,35.7z">
+				<animateTransform
+                        attributeName="transform"
+                        attributeType="XML"
+                        type="rotate"
+                        dur="2s"
+                        from="0 50 50"
+                        to="360 50 50"
+                        repeatCount="indefinite"/>
+			</path>
+		</svg>
+</div>
+
+
+<div class="js__timeslots--raw--data" data-timeslots-raw=""></div>
+<!--	<div class="js__dateslots&#45;&#45;raw&#45;&#45;data" data-dateslots-raw="{{ dateSlots }}"></div>-->
+<div class="js__months--able--to--book" data-dateslots-raw=""></div>
+<div class="js__working--days" data-workdayslots-raw=""></div>
+
+<script>
+	// Vars for selecting DOM
+	let rawTimeSlots          = JSON.parse(document.querySelector('.js__timeslots--raw--data').dataset.timeslotsRaw);
+	let workingDays           = JSON.parse(document.querySelector('.js__working--days').dataset.workdayslotsRaw);
+	// let rawDateSlots = JSON.parse(document.querySelector('.js__dateslots--raw--data').dataset.dateslotsRaw);
+	let monthsAvailableToBook = JSON.parse(document.querySelector('.js__months--able--to--book').dataset.dateslotsRaw);
+	let daysInSchedule        = [];
+	let calendarDiv           = document.getElementById('table__wrapper--div');
+	let preloaderDiv          = document.getElementById('preloader__booking--table--wrapper');
+	let dateWrapperDiv        = document.getElementById('appointmentCreatorWrapper');
+	let timeSlotWrapperDiv    = document.getElementById('timeSlotCreatorWrapper');
+
+	// Vars for booking and time slots
+	// let daysAvailableToBook = [];
+	let isLoadingBookingData = true;
+	let timeSlots            = [];
+	// let dateSlots = [];
+	let selectedTime;
+	let selectedDate;
+	let selectedMonth;
+	let selectedYear;
+	let allBookings          = [];
+	let selectedFullDate;
+
+	// Vars for calendar creation
+	let today        = new Date(2019, 11);
+	let currentMonth = today.getMonth();
+	let currentYear  = today.getFullYear();
+	let dayNames     = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+	let monthNames   = ['Jaanuar', 'Veebruar', 'Märts', 'Aprill', 'Mai', 'Juuni', 'Juuli', 'August', 'September', 'Oktoober', 'November', 'Detsember'];
+	let monthAndYear = document.getElementById('monthAndYear');
+
+	// Process all time slots
+	for (let i = 0; i < rawTimeSlots.length; i++) {
+		timeSlots[i] = processTimeSlot(rawTimeSlots[i]);
+	}
+
+	// Return a new date object with the start hours of the time slot
+	function processTimeSlot(timeSlot) {
+		return timeSlot;
+		// timeSlot = new Date(timeSlot.date).getHours().toLocaleString('et');
+		// timeSlot = timeSlot < 10 ? '0' + timeSlot : timeSlot;
+		// return timeSlot + ':00';
+	}
+
+	// for (let i = 0; i < rawDateSlots.length; i++) {
+	//     let date = new Date(rawDateSlots[i].date);
+	//     dateSlots[i] = date.getDate() + '.' + (date.getMonth() + 1) + '.' + date.getFullYear();
+	// }
+
+	function next() {
+		currentYear  = (currentMonth === 11) ? currentYear + 1 : currentYear;
+		currentMonth = (currentMonth + 1) % 12;
+		showCalendar(currentMonth, currentYear);
+	}
+
+	function previous() {
+		currentYear  = (currentMonth === 0) ? currentYear - 1 : currentYear;
+		currentMonth = (currentMonth === 0) ? 11 : currentMonth - 1;
+		showCalendar(currentMonth, currentYear);
+	}
+
+	function showCalendar(month, year) {
+		let firstDay           = new Date(year, month, 1);
+		let daysInMonth        = 32 - new Date(year, month, 32).getDate();
+		let startingDay        = firstDay.getDay() === 0 ? 7 : firstDay.getDay();
+		let table              = document.getElementById('calendar-body');
+		// Clear all table cells
+		table.innerHTML        = '';
+		// Fill the table header title and refresh vars
+		monthAndYear.innerHTML = monthNames[month] + ' ' + year;
+		currentYear            = year;
+		currentMonth           = month;
+		// Create the table cells and fill with data
+		let date               = 1;
+		for (let i = 0; i < 6; i++) {
+			// Create a table row for the week
+			let row = document.createElement('tr');
+			// Create individual cells and fill them
+			// Set j to 1 to start on monday
+			for (let j = 1; j < 8; j++) {
+				// Make sure current day is in correct position and is the start of our calendar
+				if (i === 0 && j < startingDay) {
+					// If we have not yet reached the first day of the month, create an empty table cell
+					let tableCell     = document.createElement('td');
+					let tableCellText = document.createTextNode('');
+					tableCell.appendChild(tableCellText);
+					row.appendChild(tableCell);
+				} else if (date > daysInMonth) {
+					// If going over the days in the month, stop! It's time to STOP!!!
+					break;
+				} else {
+					// Create the table cell for an actual date in current month
+					let tableCell     = document.createElement('td');
+					let tableCellText = document.createElement('span');
+					tableCell.classList.add('tooltipped');
+					tableCell.setAttribute('data-position', 'top');
+
+					// Only enter the loop if either months or days that are set as limits to booking ahead are met.
+					// Also check if we are dealing with current year calendar, if not AND if also not at the end of current year, should go to the
+					// generic message below in the else.
+					console.log(today.getMonth() - (month + monthsAvailableToBook));
+					if (
+						today.getMonth() + monthsAvailableToBook >= month && year === today.getFullYear()
+						|| year === today.getFullYear() + 1 && (today.getMonth() + 1) % 12 >= month
+					) {
+						// Only allow booking dates to be available when date is larger than today and in current month and year.
+						// Or if month is larger than current month, but we are still in current year.
+						// Or if the date is in next year, but the current displayed month
+						if (
+							date > today.getDate() && month === today.getMonth() && year === today.getFullYear()
+							|| month > today.getMonth() && year === today.getFullYear()
+							|| year === (today.getFullYear() + 1) && (today.getMonth() + 1) % 12 >= month
+						) {
+							// Check if our day is in the work schedule of when the salon is open.
+							if (workingDays.includes(dayNames[j])) {
+								// Color in the zebra stripes to calendar.
+								if (i % 2) {
+									tableCell.classList.add('green');
+									tableCell.classList.add('accent-1');
+								} else {
+									tableCell.classList.add('green');
+									tableCell.classList.add('accent-2');
+								}
+								tableCell.classList.add('hoverable');
+								tableCell.classList.add('clickable__cursor');
+								tableCell.setAttribute('data-tooltip', 'Vajuta siia, et broneerida aeg.');
+								tableCell.addEventListener('click', (eventTarget) => {
+									selectedDate  = eventTarget.target.innerText;
+									selectedMonth = currentMonth;
+									selectedYear  = currentYear;
+									displayTimeSlotPicker();
+								});
+							} else {
+								// Days that we are closed for business
+								tableCell.classList.add('grey-text');
+								tableCell.classList.add('line-through');
+								tableCell.setAttribute('data-tooltip', 'Vabandame. Oleme antud päeval suletud.');
+							}
+						} else if (date === today.getDate() && year === today.getFullYear() && month === today.getMonth()) {
+							// Color today differently, but not make today bookable.
+							tableCell.classList.add('blue');
+							tableCell.classList.add('lighten-2');
+							tableCell.setAttribute(
+								'data-tooltip',
+								'Tänasele päevale broneeringuid internetis teha ei saa. Palun helistage ja konsulteerige meie konsultandiga.');
+						} else {
+							// The cells that live in the past, this month.
+							tableCell.classList.add('grey-text');
+							tableCell.classList.add('line-through');
+							tableCell.setAttribute('data-tooltip', 'Aega saab broneerida vaid tulevikku.');
+						}
+					} else if (
+						year < today.getFullYear()
+						|| date < today.getDate() && month === today.getMonth() && year === today.getFullYear()
+						|| month < today.getMonth() && year === today.getFullYear()
+					) {
+						// For cells that live in the past. ALL of past.
+						tableCell.classList.add('grey-text');
+						tableCell.classList.add('line-through');
+						tableCell.setAttribute('data-tooltip', 'Aega saab broneerida vaid tulevikku.');
+					} else {
+						// Generic message for edge cases.
+						tableCell.classList.add('grey-text');
+						tableCell.classList.add('line-through');
+						tableCell.setAttribute('data-tooltip', 'Broneerimine ei ole antud päevale avatud.');
+					}
+
+					tableCellText.className = 'dateslot__picker--button';
+					tableCellText.innerText = date;
+					tableCell.appendChild(tableCellText);
+					tableCell.appendChild(tableCellText);
+					row.appendChild(tableCell);
+					date++;
+				}
+			}
+
+			// Append all rows to calendar table body.
+			table.appendChild(row);
+		}
+
+		// Init all tool tip event listeners.
+		let elements  = document.querySelectorAll('.tooltipped');
+		let instances = M.Tooltip.init(elements, {
+			enterDelay : 200,
+			exitDelay  : 0
+		});
+	}
+
+	// todo write check if a day is in open days schedule
+	function isDayInSchedule(day) {
+		return workingDays.includes(dayNames[day]);
+	}
+
+	// function createDateSlots() {
+	//     for (let i = 0; i < dateSlots.length; i++) {
+	//         let node = document.createElement('button');
+	//         node.className = 'dateslot__picker col s3 mt-4';
+	//         let dateNode = document.createElement('button');
+	//         dateNode.className = 'dateslot__picker--button btn btn-large hoverable waves-effect waves-light light-blue accent-3';
+	//         dateNode.innerText = dateSlots[i];
+	//         node.appendChild(dateNode);
+	//         dateWrapperDiv.appendChild(node);
+	//         dateNode.addEventListener('click', (eventTarget) => {
+	//             console.log(eventTarget.target.innerText)
+	//         });
+	//     }
+	// }
+
+	// Show the time slot picker with info and colored slots for taken and free ones
+	function displayTimeSlotPicker() {
+		createBookedSlotsArrayForCurrentDate();
+		createTimeSlots();
+	}
+
+	function createBookedSlotsArrayForCurrentDate() {
+
+	}
+
+	function createTimeSlots() {
+		selectedFullDate             = selectedDate + '.' + selectedMonth + '.' + selectedYear;
+		// console.log(selectedFullDate);
+		timeSlotWrapperDiv.innerText = '';
+		for (let i = 0; i < timeSlots.length; i++) {
+			let node           = document.createElement('div');
+			node.className     = 'timeslot__picker col s12';
+			let timeNode       = document.createElement('p');
+			timeNode.className = 'timeslot__picker--button btn btn-large col-12 waves-effect waves-light ' + isSlotAvailable(timeSlots[i]);
+			timeNode.innerText = timeSlots[i];
+			node.appendChild(timeNode);
+			timeSlotWrapperDiv.appendChild(node);
+		}
+	}
+
+	// Use the currently selected date to render colors and disabled attribute for the timeslots
+	function isSlotAvailable(timeSlot) {
+		if (selectedFullDate in allBookings) {
+			// console.log('day has booked slots');
+			// console.log(timeSlot);
+			// console.log(allBookings[selectedFullDate][timeSlot]);
+			if (allBookings[selectedFullDate].includes(timeSlot)) {
+				// console.log(timeSlot);
+				return 'orange accent-3 grey-text text-lighten-4';
+			}
+		}
+		return 'light-green accent-3 grey-text text-darken-1';
+	}
+
+	// Display the final actual booking form with the selected date and timeslot
+	function displayBookingForm() {
+
+	}
+
+	// Validate booking info on the front end for no conflicts
+	function validateBookingInfo() {
+
+	}
+
+	// Send booking request to the backend and return a response of success or failure
+	function sendBookingInfo() {
+
+	}
+
+	function processBookingsList(data) {
+		let hours;
+		let minutes;
+		for (let i = 0; i < data.length; i++) {
+			let date    = null;
+			let dateKey = null;
+			// Remove the timezone at the end to avoid time issues
+			date        = new Date(data[i].time.substring(0, data[i].time.indexOf('+')));
+			dateKey     = date.getDate() + '.' + date.getMonth() + '.' + date.getFullYear();
+			if (allBookings[dateKey] === undefined) {
+				allBookings[dateKey] = [];
+			}
+			hours   = date.getHours().toLocaleString('et') < 10 ? '0' + date.getHours().toLocaleString('et') : date.getHours().toLocaleString('et');
+			minutes = date.getMinutes() < 10 ? '0' + date.getMinutes() : date.getMinutes();
+			// console.log(hours + ':' + minutes);
+			allBookings[dateKey].push(hours + ':' + minutes);
+		}
+		// console.log(allBookings);
+		// console.log('28.2.2020' in allBookings);
+		// console.log(allBookings['28.2.2020'].includes(1585407600000));
+	}
+
+	// Fetch all the info for already booked dates and slots
+	function getBookingsList() {
+		axios.get('')
+			.then((response) => {
+				processBookingsList(response.data);
+				// allBookings = response.data;
+				isLoadingBookingData = false;
+				showCalendar(currentMonth, currentYear);
+				calendarDiv.classList.remove('hidden');
+				preloaderDiv.classList.add('hidden');
+			}).catch((response) => {
+			console.log(response);
+		});
+	}
+
+	function processProcedures(data) {
+
+	}
+
+	function getProcedureList() {
+		axios.get('')
+			.then((response) => {
+				processProcedures(response.data);
+			})
+			.catch((response) => {
+				console.log(response);
+			});
+	}
+
+	function processTechnicians(data) {
+
+	}
+
+	function getTechnicians() {
+		axios.get('')
+			.then((response) => {
+				processTechnicians(response.data);
+			})
+			.catch((response) => {
+				console.log(response);
+			});
+	}
+
+	getBookingsList();
+	getProcedureList();
+	getTechnicians();
+</script>
+</body>
+</html>
